@@ -20,7 +20,7 @@
 	<platform name="android">
 		<config-file target="res/xml/config.xml" parent="/*">
 			<feature name="DGGeofencing" >
-	        	<param name="android-package" value="com.adobe.plugins.GAPlugin"/>
+	        	<param name="android-package" value="org.apache.cordova.plugin.geo.DGGeofencing"/>
 			</feature>
 		</config-file>
 		
@@ -42,7 +42,7 @@
 	<platform name="ios">
         <plugins-plist key="DGGeofencing" string="DGGeofencing" />
 
-        <header-file src="src/android/DGGeofencing/DGGeofencing.h" />
-        <source-file src="src/android/DGGeofencing/DGGeofencing.m" />
+        <header-file src="src/iOS/DGGeofencing/DGGeofencing.h" />
+        <source-file src="src/iOS/DGGeofencing/DGGeofencing.m" />
     </platform>
 </plugin>
