@@ -7,13 +7,17 @@
  * dov.goldberg@ogonium.com
  *
  */
+ 
+var exec = require('cordova/exec');
+
+
 var DGGeofencing = {
 /*
      Params:
      NONE
      */
 	initCallbackForRegionMonitoring: function(params, success, fail) {
-		return Cordova.exec(success, fail, "DGGeofencing", "initCallbackForRegionMonitoring", params);
+		return exec(success, fail, "DGGeofencing", "initCallbackForRegionMonitoring", params);
 	},
 
 /*
@@ -25,7 +29,7 @@ var DGGeofencing = {
      #define KEY_REGION_ACCURACY @"accuracy"
      */
 	startMonitoringRegion: function(params, success, fail) {
-		return Cordova.exec(success, fail, "DGGeofencing", "startMonitoringRegion", params);
+		return exec(success, fail, "DGGeofencing", "startMonitoringRegion", params);
 	},
 
 /*
@@ -35,7 +39,7 @@ var DGGeofencing = {
     #define KEY_REGION_LNG     @"longitude"
 	*/
 	stopMonitoringRegion: function(params, success, fail) {
-		return Cordova.exec(success, fail, "DGGeofencing", "stopMonitoringRegion", params);
+		return exec(success, fail, "DGGeofencing", "stopMonitoringRegion", params);
 	},
 
 /*
@@ -43,7 +47,7 @@ var DGGeofencing = {
 	NONE
 	*/
 	getWatchedRegionIds: function(success, fail) {
-		return Cordova.exec(success, fail, "DGGeofencing", "getWatchedRegionIds", []);
+		return exec(success, fail, "DGGeofencing", "getWatchedRegionIds", []);
 	},
 
 /*
@@ -51,7 +55,7 @@ var DGGeofencing = {
 	NONE
 	*/
 	getPendingRegionUpdates: function(success, fail) {
-		return Cordova.exec(success, fail, "DGGeofencing", "getPendingRegionUpdates", []);
+		return exec(success, fail, "DGGeofencing", "getPendingRegionUpdates", []);
 	},
 
 /*
@@ -59,7 +63,7 @@ var DGGeofencing = {
 	NONE
 	*/
 	startMonitoringSignificantLocationChanges: function(success, fail) {
-		return Cordova.exec(success, fail, "DGGeofencing", "startMonitoringSignificantLocationChanges", []);
+		return exec(success, fail, "DGGeofencing", "startMonitoringSignificantLocationChanges", []);
 	},
 
 /*
@@ -67,6 +71,10 @@ var DGGeofencing = {
 	NONE
 	*/
 	stopMonitoringSignificantLocationChanges: function(success, fail) {
-		return Cordova.exec(success, fail, "DGGeofencing", "stopMonitoringSignificantLocationChanges", []);
+		return exec(success, fail, "DGGeofencing", "stopMonitoringSignificantLocationChanges", []);
 	}
 };
+
+if (typeof module != 'undefined' && module.exports) {
+    module.exports = DGGeofencing;
+}
