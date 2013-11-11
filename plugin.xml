@@ -40,6 +40,12 @@
 	</platform>
 	
 	<platform name="ios">
+		<config-file target="config.xml" parent="/*">
+                <feature name="DGGeofencing">
+                        <param name="ios-package" value="DGGeofencing"/>
+                </feature>
+        </config-file>
+        
         <plugins-plist key="DGGeofencing" string="DGGeofencing" />
 
         <header-file src="src/iOS/DGGeofencing/DGGeofencing.h" />
