@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    id="com.ogonium.phonegap.plugins.DGGeofencing"
+    version="1.0.0">
+    
+    <engines>
+	    <engine name="cordova" version="&gt;=3.0.0" platform="ios|android" />
+	</engines>
+	
+	<name>DGGeofencing</name>
+	<description>Geofencing And Significant Location Change Monitoring Plugin For PhoneGap.</description>
+	<author>Dov Goldberg of Ogonium</author>
+	<license>The MIT License</license>
+	
+	<js-module src="www/DGGeofencing.js" name="DGGeofencing">
+        <clobbers target="window.DGGeofencing" />
+	</js-module>
+	
+	<platform name="android">
+		<config-file target="res/xml/config.xml" parent="/*">
+			<feature name="DGGeofencing" >
+	        	<param name="android-package" value="com.adobe.plugins.GAPlugin"/>
+			</feature>
+		</config-file>
+		
+		<config-file target="AndroidManifest.xml" parent="/manifest/application">
+            <receiver android:name="org.apache.cordova.plugin.geo.ProximityReceiver">
+                <intent-filter>
+                    <action android:name="geoFencingProximityAlert"/>
+                    <category android:name="android.intent.category.DEFAULT" />
+                </intent-filter>
+            </receiver>
+        </config-file>
+		
+		<source-file src="src/android/DGGeofencing/DGGeofencing.java" target-dir="src/org/apache/cordova/plugin/geo/" />
+        <source-file src="src/android/DGGeofencing/DGGeofencingService.java" target-dir="src/org/apache/cordova/plugin/geo/" />
+        <source-file src="src/android/DGGeofencing/LocationChangedListener.java" target-dir="src/org/apache/cordova/plugin/geo/" />
+        <source-file src="src/android/DGGeofencing/ProximityReceiver.java" target-dir="src/org/apache/cordova/plugin/geo/" />
+	</platform>
+	
+	<platform name="ios">
+        <plugins-plist key="DGGeofencing" string="DGGeofencing" />
+
+        <header-file src="DGGeofencing.h" />
+        <header-file src="DGGeofencingHelper.h" />
+
+        <source-file src="DGGeofencing.m" />
+        <source-file src="DGGeofencingHelper.m" />
+    </platform>
+</plugin>

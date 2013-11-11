@@ -18,7 +18,7 @@
        under the License.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" android:windowSoftInputMode="adjustPan"
-      package="com.ogonium.GeofencingAndroidSample" android:versionName="1.0" android:versionCode="1" android:hardwareAccelerated="true">
+      package="com.ogonium.GeofencingAndroidSample" android:versionName="1.0" android:versionCode="1">
     <supports-screens
         android:largeScreens="true"
         android:normalScreens="true"
@@ -46,12 +46,11 @@
     <uses-permission android:name="android.permission.BROADCAST_STICKY" />
 
 
-    <uses-sdk android:minSdkVersion="11" android:targetSdkVersion="17"/>
-    <application android:icon="@drawable/icon" android:label="@string/app_name" android:allowBackup="false"
-        android:hardwareAccelerated="true">
+    <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="17"/>
+    <application android:icon="@drawable/icon" android:label="@string/app_name" android:allowBackup="false">
         <activity android:name="Geofencing" android:label="@string/app_name"
                 android:theme="@android:style/Theme.Black.NoTitleBar"
-                android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale">
+                android:configChanges="orientation|keyboardHidden|keyboard|locale">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

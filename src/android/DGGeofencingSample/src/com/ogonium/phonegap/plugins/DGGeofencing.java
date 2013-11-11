@@ -1,5 +1,6 @@
 package com.ogonium.phonegap.plugins;
 
+import org.apache.cordova.CordovaLocationListener;
 import org.apache.cordova.GeoBroker;
 import org.apache.cordova.GPSListener;
 import org.apache.cordova.NetworkListener;
