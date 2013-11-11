@@ -42,7 +42,7 @@
 	<platform name="ios">
 		<config-file target="config.xml" parent="/*">
                 <feature name="DGGeofencing">
-                        <param name="ios-package" value="CDVDGGeofencing"/>
+                        <param name="ios-package" value="DGGeofencing"/>
                 </feature>
         </config-file>
         
