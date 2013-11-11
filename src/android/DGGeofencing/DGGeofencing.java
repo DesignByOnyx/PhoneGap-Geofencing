@@ -77,7 +77,7 @@ public class DGGeofencing extends CordovaPlugin {
   @Override
   public boolean execute(String action, JSONArray data, CallbackContext callbackContext) throws JSONException {
     try {
-      if ("addRegion".equals(action)) {
+      if ("startMonitoringRegion".equals(action)) {
         JSONObject params = parseParameters(data);
         String id = params.getString("fid");
         Log.d(TAG, "adding region " + id);
@@ -88,7 +88,7 @@ public class DGGeofencing extends CordovaPlugin {
         callbackContext.success();
         return true;
       }
-      if ("removeRegion".equals(action)) {
+      if ("stopMonitoringRegion".equals(action)) {
         JSONObject params = parseParameters(data);
         String id = params.getString("fid");
         service.removeRegion(id);
