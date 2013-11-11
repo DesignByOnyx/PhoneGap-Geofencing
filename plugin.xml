@@ -42,10 +42,7 @@
 	<platform name="ios">
         <plugins-plist key="DGGeofencing" string="DGGeofencing" />
 
-        <header-file src="DGGeofencing.h" />
-        <header-file src="DGGeofencingHelper.h" />
-
-        <source-file src="DGGeofencing.m" />
-        <source-file src="DGGeofencingHelper.m" />
+        <header-file src="src/android/DGGeofencing/DGGeofencing.h" />
+        <source-file src="src/android/DGGeofencing/DGGeofencing.m" />
     </platform>
 </plugin>
