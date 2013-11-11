@@ -76,21 +76,31 @@ public class DGGeofencing extends CordovaPlugin {
 
   @Override
   public boolean execute(String action, JSONArray data, CallbackContext callbackContext) throws JSONException {
-    try {
+	  try {
       if ("startMonitoringRegion".equals(action)) {
-        JSONObject params = parseParameters(data);
+    	//data = [id, lat, lon, radius]
+    	
+    	/*JSONObject params = parseParameters(data);
         String id = params.getString("fid");
         Log.d(TAG, "adding region " + id);
         service.addRegion(id, params.getDouble("latitude"), params.getDouble("longitude"),
-                (float) params.getInt("radius"));
+                (float) params.getInt("radius"));*/
+    	 
+	    String id = data.getString(0);
+        Log.d(TAG, "adding region " + id);
+        service.addRegion(id, data.getDouble(1), data.getDouble(2),
+              (float) data.getInt(3	));
+        
         registerListener();
         regionIds.add(id);
         callbackContext.success();
         return true;
       }
       if ("stopMonitoringRegion".equals(action)) {
-        JSONObject params = parseParameters(data);
-        String id = params.getString("fid");
+        /*JSONObject params = parseParameters(data);
+        String id = params.getString("fid");*/
+    	//data = [id]
+    	String id = data.getString(0);
         service.removeRegion(id);
         regionIds.remove(id);
         callbackContext.success();
@@ -131,7 +141,7 @@ public class DGGeofencing extends CordovaPlugin {
       StringWriter writer = new StringWriter();
       PrintWriter err = new PrintWriter(writer);
       e.printStackTrace(err);
-      callbackContext.error(writer.toString());
+      callbackContext.error("EXCEPTION: " + writer.toString());
     }
 
     return false;
