@@ -72,7 +72,7 @@ var DGGeofencing = {
 	*/
 	stopMonitoringSignificantLocationChanges: function(success, fail) {
 		return exec(success, fail, "DGGeofencing", "stopMonitoringSignificantLocationChanges", []);
-	}
+	},
 	
 	/* 
 	This is used so the JavaScript can be updated when a region is entered or exited

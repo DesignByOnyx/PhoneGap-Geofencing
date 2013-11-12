@@ -227,7 +227,7 @@ public class DGGeofencing extends CordovaPlugin {
 	  
 	  	return event.toString();
   }
-
+/*
   private JSONObject parseParameters(JSONArray data) throws JSONException {
     if (data.length() == 1 && !data.isNull(0)) {
       return (JSONObject) data.get(0);
@@ -235,7 +235,7 @@ public class DGGeofencing extends CordovaPlugin {
       throw new IllegalArgumentException("Invalid arguments specified!");
     }
   }
-  
+ */ 
   private String arrayJoin(String[] strArray, String glue)
   {
     int len = strArray.length;
