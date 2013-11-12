@@ -73,6 +73,28 @@ var DGGeofencing = {
 	stopMonitoringSignificantLocationChanges: function(success, fail) {
 		return exec(success, fail, "DGGeofencing", "stopMonitoringSignificantLocationChanges", []);
 	}
+	
+	/* 
+	This is used so the JavaScript can be updated when a region is entered or exited
+	*/
+	regionMonitorUpdate: function(regionupdate) {
+		console.log("regionMonitorUpdate: " + regionupdate);
+		var ev = document.createEvent('HTMLEvents');
+		ev.regionupdate = regionupdate;
+		ev.initEvent('region-update', true, true, arguments);
+		document.dispatchEvent(ev);
+	},
+	
+	/* 
+	This is used so the JavaScript can be updated when a significant change has occured
+	*/
+	locationMonitorUpdate: function(locationupdate) {
+		console.log("locationMonitorUpdate: " + locationupdate);
+		var ev = document.createEvent('HTMLEvents');
+		ev.locationupdate = locationupdate;
+		ev.initEvent('location-update', true, true, arguments);
+		document.dispatchEvent(ev);
+	}
 };
 
 if (typeof module != 'undefined' && module.exports) {

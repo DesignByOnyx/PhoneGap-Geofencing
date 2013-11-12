@@ -139,10 +139,11 @@
     NSString *latitude = [command.arguments objectAtIndex:1];
     NSString *longitude = [command.arguments objectAtIndex:2];
     double radius = [[command.arguments objectAtIndex:3] doubleValue];
-    CLLocationAccuracy accuracy = [[command.arguments objectAtIndex:4] floatValue];
+    //CLLocationAccuracy accuracy = [[command.arguments objectAtIndex:4] floatValue];
     
     DGLocationData* lData = self.locationData;
-    NSString *callbackId = [lData.geofencingCallbacks objectAtIndex:0];
+    //NSString *callbackId = [lData.geofencingCallbacks objectAtIndex:0];
+    NSString *callbackId = command.callbackId;
     
     if ([self isLocationServicesEnabled] == NO) {
         lData.locationStatus = PERMISSIONDENIED;
@@ -180,19 +181,34 @@
         CLLocationCoordinate2D coord = CLLocationCoordinate2DMake([latitude doubleValue], [longitude doubleValue]);
         CLRegion *region = [[CLRegion alloc] initCircularRegionWithCenter:coord radius:radius identifier:regionId];
         [self.locationManager startMonitoringForRegion:region];
+        
+        /*NSMutableDictionary* returnInfo = [NSMutableDictionary dictionaryWithCapacity:2];
+        NSNumber* timestamp = [NSNumber numberWithDouble:([[NSDate date] timeIntervalSince1970] * 1000)];
+        [returnInfo setObject:timestamp forKey:@"timestamp"];
+        [returnInfo setObject:@"Region was added successfully" forKey:@"message"];
+        [returnInfo setObject:regionId forKey:@"regionId"];
+        [returnInfo setObject:@"monitoradded" forKey:@"callbacktype"];*/
+        
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK /*messageAsDictionary:returnInfo*/];
+        //[result setKeepCallbackAsBool:YES];
+        [self.commandDelegate sendPluginResult:result callbackId:callbackId];
     }
 }
 
 - (void) stopMonitoringRegion:(CDVInvokedUrlCommand*)command {
-    DGLocationData* lData = self.locationData;
-    NSString* callbackId = [lData.geofencingCallbacks objectAtIndex:0];
+    //DGLocationData* lData = self.locationData;
+    //NSString* callbackId = [lData.geofencingCallbacks objectAtIndex:0];
+    
+    NSString* callbackId = command.callbackId;
+    
     // Parse Incoming Params
     NSString* regionId = [command.arguments objectAtIndex:0];
     NSString *latitude = [command.arguments objectAtIndex:1];
     NSString *longitude = [command.arguments objectAtIndex:2];
+    double radius = [[command.arguments objectAtIndex:3] doubleValue];
     
     CLLocationCoordinate2D coord = CLLocationCoordinate2DMake([latitude doubleValue], [longitude doubleValue]);
-    CLRegion *region = [[CLRegion alloc] initCircularRegionWithCenter:coord radius:10.0 identifier:regionId];
+    CLRegion *region = [[CLRegion alloc] initCircularRegionWithCenter:coord radius:radius identifier:regionId];
     [[self locationManager] stopMonitoringForRegion:region];
     
     // return success to callback
@@ -205,14 +221,16 @@
     [returnInfo setObject:@"monitorremoved" forKey:@"callbacktype"];
     
     CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
-    [result setKeepCallbackAsBool:YES];
+    //[result setKeepCallbackAsBool:YES];
     [self.commandDelegate sendPluginResult:result callbackId:callbackId];
 }
 
 
 - (void) startMonitoringSignificantLocationChanges:(CDVInvokedUrlCommand*)command {
     DGLocationData* lData = self.locationData;
-    NSString *callbackId = [lData.geofencingCallbacks objectAtIndex:0];
+    //NSString *callbackId = [lData.geofencingCallbacks objectAtIndex:0];
+    NSString *callbackId = command.callbackId;
+    
     if (![self isLocationServicesEnabled])
 	{
 		BOOL forcePrompt = NO;
@@ -267,11 +285,16 @@
     }
     
     [[self locationManager] startMonitoringSignificantLocationChanges];
+    
+    CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [result setKeepCallbackAsBool:YES];
+    [self.commandDelegate sendPluginResult:result callbackId:callbackId];
 }
 
 - (void) stopMonitoringSignificantLocationChanges:(CDVInvokedUrlCommand*)command {
     DGLocationData* lData = self.locationData;
-    NSString *callbackId = [lData.geofencingCallbacks objectAtIndex:0];
+    //NSString *callbackId = [lData.geofencingCallbacks objectAtIndex:0];
+    NSString *callbackId = command.callbackId;
     if (![self isLocationServicesEnabled])
 	{
 		BOOL forcePrompt = NO;
@@ -326,6 +349,9 @@
     }
     
     [[self locationManager] stopMonitoringSignificantLocationChanges];
+    CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [result setKeepCallbackAsBool:YES];
+    [self.commandDelegate sendPluginResult:result callbackId:callbackId];
 }
 
 #pragma mark Location Delegate Callbacks
@@ -414,6 +440,7 @@
  *    CLLocationManager instance with a non-nil delegate that implements this method.
  */
 - (void)locationManager:(CLLocationManager *)manager didExitRegion:(CLRegion *)region {
+    /*
     NSString *regionId = region.identifier;
     DGLocationData* lData = self.locationData;
     NSString* callbackId = [lData.geofencingCallbacks objectAtIndex:0];
@@ -431,7 +458,38 @@
         CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
         [result setKeepCallbackAsBool:YES];
         [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-    }
+    }*/
+    
+    /*if (self.didLaunchForRegionUpdate) {
+        NSString *path = [self applicationDocumentsDirectory];
+        NSString *finalPath = [path stringByAppendingPathComponent:@"notifications.dg"];
+        NSMutableArray *updates = [NSMutableArray arrayWithContentsOfFile:finalPath];
+        
+        if (!updates) {
+            updates = [NSMutableArray array];
+        }
+        
+        NSMutableDictionary *update = [NSMutableDictionary dictionary];
+        
+        [update setObject:region.identifier forKey:@"fid"];
+        [update setObject:[NSNumber numberWithDouble:[[NSDate date] timeIntervalSince1970]] forKey:@"timestamp"];
+        [update setObject:@"left" forKey:@"status"];
+        
+        [updates addObject:update];
+        
+        [updates writeToFile:finalPath atomically:YES];
+    } else {*/
+        //NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+        /*[dict setObject:@"left" forKey:@"status"];
+        [dict setObject:region.identifier forKey:@"fid"];*/
+    
+        NSDictionary *dict = @{@"fid": region.identifier, @"status": @"left"};
+    
+        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options:0 error:nil];
+        NSString *jsonString = [[NSString alloc] initWithBytes:[jsonData bytes] length:[jsonData length] encoding:NSUTF8StringEncoding];
+        NSString *jsStatement = [NSString stringWithFormat:@"DGGeofencing.regionMonitorUpdate(%@);", jsonString];
+        [self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
+    //}
 
 }
 
@@ -465,6 +523,13 @@
     CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
     [result setKeepCallbackAsBool:YES];
     [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+}
+
++ (NSString*) applicationDocumentsDirectory
+{
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *basePath = ([paths count] > 0) ? [paths objectAtIndex:0] : nil;
+    return basePath;
 }
 
 @end
