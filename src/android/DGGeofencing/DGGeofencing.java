@@ -105,17 +105,21 @@ public class DGGeofencing extends CordovaPlugin {
     	String id = data.getString(0);
         service.removeRegion(id);
         regionIds.remove(id);
+        
+        if(regionIds.size() == 0 && receiver != null) {
+            cordova.getActivity().unregisterReceiver(receiver);
+        }
+        
         callbackContext.success();
         return true;
       }
       if ("getWatchedRegionIds".equals(action)) {
         //callbackContext.success(new JSONArray(regionIds));
-
-      	// Support for <= 2.3
-      	//TODO: use better method to convert HashSet<string> to String
-      	strRegionIds = arrayJoin( regionIds.toArray( new String[regionIds.size()] ), ",");
+    	
+    	// Support for <= 2.3
+    	//TODO: use better method to convert HashSet<string> to String
+    	strRegionIds = arrayJoin( regionIds.toArray( new String[regionIds.size()] ), ",");
         callbackContext.success( strRegionIds );
-        
 		return true;
       }
 
@@ -151,13 +155,9 @@ public class DGGeofencing extends CordovaPlugin {
 
   void fireLocationChangedEvent(final Location location) {
     Log.d(TAG, "fireLocationChangedEvent");
-    //Log.d(TAG, "javascript:DGGeofencing.locationMonitorUpdate(" + createLocationEvent(location) + ")");
-    //this.webView.sendJavascript("DGGeofencing.locationMonitorUpdate(" + createLocationEvent(location) + ")");
-    
     cordova.getActivity().runOnUiThread(new Runnable() {
       @Override
       public void run() {
-    	    Log.d(TAG, "javascript:DGGeofencing.locationMonitorUpdate(" + createLocationEvent(location) + ")");
         webView.loadUrl("javascript:DGGeofencing.locationMonitorUpdate(" + createLocationEvent(location) + ")");
         oldLocation = location;
       }
@@ -201,10 +201,6 @@ public class DGGeofencing extends CordovaPlugin {
   }
 
   void fireRegionChangedEvent(final Intent intent) {
-	  //String status = intent.getBooleanExtra(LocationManager.KEY_PROXIMITY_ENTERING, false) ? "enter" : "left";
-	  //String id = (String) intent.getExtras().get("id");
-	  //Log.d(TAG, "javascript:DGGeofencing.regionMonitorUpdate(" + createRegionEvent(id, status) + ")");
-	  //this.webView.sendJavascript("DGGeofencing.regionMonitorUpdate(" + createRegionEvent(id, status) + ")");
     cordova.getActivity().runOnUiThread(new Runnable() {
       @Override
       public void run() {
@@ -217,18 +213,7 @@ public class DGGeofencing extends CordovaPlugin {
   }
 
   private String createRegionEvent(String id, String status) {
-	  	JSONObject event = new JSONObject();
-	  	try {
-			event.put("fid", id);
-			event.put("status", status);
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			throw new RuntimeException("region could not be serialized to json", e);
-		}
-	  	
-	  
-	  	return event.toString();
+    return "{fid:\"" + id + "\",status:\"" + status + "\"}";
   }
 /*
   private JSONObject parseParameters(JSONArray data) throws JSONException {

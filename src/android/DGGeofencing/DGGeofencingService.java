@@ -1,6 +1,6 @@
 package org.apache.cordova.plugin.geo;
 
-//import android.app.Activity;
+import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -28,19 +28,16 @@ public class DGGeofencingService implements LocationListener {
 
   private LocationManager locationManager;
   private Set<LocationChangedListener> listeners = new HashSet<LocationChangedListener>();
-  private final Context context;
+  private final Activity activity;
+  private Boolean isListening = false;
 
-  public DGGeofencingService(Context context) {
-    this.context = context;
-    locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-    Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-    if (location != null) {
-      onLocationChanged(location);
-    }
-    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, INTERFAL_TIME, MIN_DISTANCE, this);
+  public DGGeofencingService(Activity activity) {
+    this.activity = activity;
+    locationManager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
   }
 
   public void addRegion(String id, double latitude, double longitude, float radius) {
+	Log.d(TAG, "Adding Proximity Alert: id: " + id + ", lat: " + latitude + ", lon: " + longitude + ", radius: " + longitude);
     PendingIntent proximityIntent = createIntent(id);
     locationManager.addProximityAlert(latitude, longitude, radius, -1, proximityIntent);
   }
@@ -53,15 +50,31 @@ public class DGGeofencingService implements LocationListener {
   private PendingIntent createIntent(String id) {
     Intent intent = new Intent(PROXIMITY_ALERT_INTENT);
     intent.putExtra("id", id);
-    return PendingIntent.getBroadcast(this.context, 0, intent, FLAG_ACTIVITY_NEW_TASK);
+    return PendingIntent.getBroadcast(activity, 0, intent, FLAG_ACTIVITY_NEW_TASK);
+  }
+  
+  private void startListening() {
+	isListening = true;
+	Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+    if (location != null) {
+      onLocationChanged(location);
+    }
+    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, INTERFAL_TIME, MIN_DISTANCE, this);
   }
 
   public void addLocationChangedListener(LocationChangedListener listener) {
     this.listeners.add(listener);
+    if( !isListening ) {
+    	startListening();
+    }
   }
 
   public void removeLocationChangedListener(LocationChangedListener listener) {
     this.listeners.remove(listener);
+    if(this.listeners.size() == 0) {
+    	locationManager.removeUpdates(this);
+    	isListening = false;
+    }
   }
 
   @Override
