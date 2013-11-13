@@ -87,9 +87,11 @@ public class DGGeofencing extends CordovaPlugin {
                 (float) params.getInt("radius"));*/
     	 
 	    String id = data.getString(0);
-        Log.d(TAG, "adding region " + id);
-        service.addRegion(id, data.getDouble(1), data.getDouble(2),
-              (float) data.getInt(3	));
+	    Double lat = data.getDouble(1);
+	    Double lon = data.getDouble(2);
+	    Float radius = (float) data.getInt(3);
+        Log.d(TAG, "Adding region(" + id + ", " + lat + ", " + lon + ", " + radius +")");
+        service.addRegion(id, lat, lon, radius);
         
         registerListener();
         regionIds.add(id);
@@ -149,16 +151,17 @@ public class DGGeofencing extends CordovaPlugin {
 
   void fireLocationChangedEvent(final Location location) {
     Log.d(TAG, "fireLocationChangedEvent");
-    Log.d(TAG, "javascript:DGGeofencing.locationMonitorUpdate(" + createLocationEvent(location) + ")");
-    this.webView.sendJavascript("DGGeofencing.locationMonitorUpdate(" + createLocationEvent(location) + ")");
-//    cordova.getActivity().runOnUiThread(new Runnable() {
-//      @Override
-//      public void run() {
-//    	    Log.d(TAG, "javascript:DGGeofencing.locationMonitorUpdate(" + createLocationEvent(location) + ")");
-//        webView.loadUrl("javascript:DGGeofencing.locationMonitorUpdate(" + createLocationEvent(location) + ")");
-//        oldLocation = location;
-//      }
-//    });
+    //Log.d(TAG, "javascript:DGGeofencing.locationMonitorUpdate(" + createLocationEvent(location) + ")");
+    //this.webView.sendJavascript("DGGeofencing.locationMonitorUpdate(" + createLocationEvent(location) + ")");
+    
+    cordova.getActivity().runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+    	    Log.d(TAG, "javascript:DGGeofencing.locationMonitorUpdate(" + createLocationEvent(location) + ")");
+        webView.loadUrl("javascript:DGGeofencing.locationMonitorUpdate(" + createLocationEvent(location) + ")");
+        oldLocation = location;
+      }
+    });
   }
 
   private String createLocationEvent(Location location) {
@@ -198,19 +201,19 @@ public class DGGeofencing extends CordovaPlugin {
   }
 
   void fireRegionChangedEvent(final Intent intent) {
-	  String status = intent.getBooleanExtra(LocationManager.KEY_PROXIMITY_ENTERING, false) ? "enter" : "left";
-	  String id = (String) intent.getExtras().get("id");
-	  Log.d(TAG, "javascript:DGGeofencing.regionMonitorUpdate(" + createRegionEvent(id, status) + ")");
-	  this.webView.sendJavascript("DGGeofencing.regionMonitorUpdate(" + createRegionEvent(id, status) + ")");
-//    cordova.getActivity().runOnUiThread(new Runnable() {
-//      @Override
-//      public void run() {
-//        String status = intent.getBooleanExtra(LocationManager.KEY_PROXIMITY_ENTERING, false) ? "enter" : "left";
-//        String id = (String) intent.getExtras().get("id");
-//	    Log.d(TAG, "javascript:DGGeofencing.regionMonitorUpdate(" + createRegionEvent(id, status) + ")");
-//        webView.loadUrl("javascript:DGGeofencing.regionMonitorUpdate(" + createRegionEvent(id, status) + ")");
-//      }
-//    });
+	  //String status = intent.getBooleanExtra(LocationManager.KEY_PROXIMITY_ENTERING, false) ? "enter" : "left";
+	  //String id = (String) intent.getExtras().get("id");
+	  //Log.d(TAG, "javascript:DGGeofencing.regionMonitorUpdate(" + createRegionEvent(id, status) + ")");
+	  //this.webView.sendJavascript("DGGeofencing.regionMonitorUpdate(" + createRegionEvent(id, status) + ")");
+    cordova.getActivity().runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+        String status = intent.getBooleanExtra(LocationManager.KEY_PROXIMITY_ENTERING, false) ? "enter" : "left";
+        String id = (String) intent.getExtras().get("id");
+	    Log.d(TAG, "javascript:DGGeofencing.regionMonitorUpdate(" + createRegionEvent(id, status) + ")");
+        webView.loadUrl("javascript:DGGeofencing.regionMonitorUpdate(" + createRegionEvent(id, status) + ")");
+      }
+    });
   }
 
   private String createRegionEvent(String id, String status) {
