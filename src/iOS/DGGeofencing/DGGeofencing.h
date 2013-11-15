@@ -22,7 +22,7 @@ typedef NSUInteger DGGeofencingStatus;
     DGLocationStatus locationStatus;
     DGGeofencingStatus geofencingStatus;
     NSMutableArray* locationCallbacks;
-    NSMutableArray* geofencingCallbacks;
+    NSMutableDictionary* geofencingCallbacks;
     CLLocation* locationInfo;
 }
 
@@ -30,7 +30,7 @@ typedef NSUInteger DGGeofencingStatus;
 @property (nonatomic, assign) DGGeofencingStatus geofencingStatus;
 @property (nonatomic, strong) CLLocation* locationInfo;
 @property (nonatomic, strong) NSMutableArray* locationCallbacks;
-@property (nonatomic, strong) NSMutableArray* geofencingCallbacks;
+@property (nonatomic, strong) NSMutableDictionary* geofencingCallbacks;
 
 @end
 
@@ -54,11 +54,11 @@ typedef NSUInteger DGGeofencingStatus;
 - (BOOL) isSignificantLocationChangeMonitoringAvailable;
 
 #pragma mark Plugin Functions
-- (void) initCallbackForRegionMonitoring:(CDVInvokedUrlCommand*)command;
+- (void) initCallbackForRegionMonitoring:(CDVInvokedUrlCommand*)command forRegion:(CLRegion*)region;
 - (void) startMonitoringRegion:(CDVInvokedUrlCommand*)command;
 - (void) stopMonitoringRegion:(CDVInvokedUrlCommand*)command;
-- (void) getMonitoredRegionIds:(CDVInvokedUrlCommand*)command;
-- (void) getPendingRegionUpdates:(CDVInvokedUrlCommand*)command;
+//- (void) getMonitoredRegionIds:(CDVInvokedUrlCommand*)command;
+//- (void) getPendingRegionUpdates:(CDVInvokedUrlCommand*)command;
 - (void) startMonitoringSignificantLocationChanges:(CDVInvokedUrlCommand*)command;
 - (void) stopMonitoringSignificantLocationChanges:(CDVInvokedUrlCommand*)command;
 

@@ -78,7 +78,7 @@ var DGGeofencing = {
 	This is used so the JavaScript can be updated when a region is entered or exited
 	*/
 	regionMonitorUpdate: function(regionupdate) {
-		steal.dev.log("regionMonitorUpdate: " + JSON.stringify(regionupdate));
+		//steal.dev.log("regionMonitorUpdate: " + JSON.stringify(regionupdate));
 		var ev = document.createEvent('HTMLEvents');
 		ev.regionupdate = regionupdate;
 		ev.initEvent('region-update', true, true, arguments);
@@ -89,7 +89,7 @@ var DGGeofencing = {
 	This is used so the JavaScript can be updated when a significant change has occured
 	*/
 	locationMonitorUpdate: function(locationupdate) {
-		steal.dev.log("locationMonitorUpdate: " + JSON.stringify(locationupdate));
+		//steal.dev.log("locationMonitorUpdate: " + JSON.stringify(locationupdate));
 		var ev = document.createEvent('HTMLEvents');
 		ev.locationupdate = locationupdate;
 		ev.initEvent('location-update', true, true, arguments);
