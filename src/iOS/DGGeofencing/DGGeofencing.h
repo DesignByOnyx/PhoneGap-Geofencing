@@ -21,9 +21,10 @@ typedef NSUInteger DGGeofencingStatus;
 @interface DGLocationData : NSObject {
     DGLocationStatus locationStatus;
     DGGeofencingStatus geofencingStatus;
+    CLLocation* locationInfo;
     NSMutableArray* locationCallbacks;
     NSMutableDictionary* geofencingCallbacks;
-    CLLocation* locationInfo;
+    NSMutableDictionary* lsNewGeofences;
 }
 
 @property (nonatomic, assign) DGLocationStatus locationStatus;
@@ -31,6 +32,7 @@ typedef NSUInteger DGGeofencingStatus;
 @property (nonatomic, strong) CLLocation* locationInfo;
 @property (nonatomic, strong) NSMutableArray* locationCallbacks;
 @property (nonatomic, strong) NSMutableDictionary* geofencingCallbacks;
+@property (nonatomic, strong) NSMutableDictionary* lsNewGeofences;
 
 @end
 
@@ -39,13 +41,17 @@ typedef NSUInteger DGGeofencingStatus;
 //=====================================================
 
 @interface DGGeofencing : CDVPlugin <CLLocationManagerDelegate> {
-    @private BOOL __locationStarted;
-    @private BOOL __highAccuracyEnabled;
+    @private BOOL __hasGeofence;
+    @private BOOL __isUpdatingLocation;
+    @private BOOL __isMonitoringSignificantLocation;
     DGLocationData* locationData;
 }
 
 @property (nonatomic, strong) CLLocationManager* locationManager;
 @property (nonatomic, strong) DGLocationData* locationData;
+@property (nonatomic, assign) BOOL didLaunchForRegionUpdate;
+
++(DGGeofencing*)sharedGeofencingHelper;
 
 - (BOOL) isLocationServicesEnabled;
 - (BOOL) isAuthorized;
@@ -57,8 +63,7 @@ typedef NSUInteger DGGeofencingStatus;
 - (void) initCallbackForRegionMonitoring:(CDVInvokedUrlCommand*)command forRegion:(CLRegion*)region;
 - (void) startMonitoringRegion:(CDVInvokedUrlCommand*)command;
 - (void) stopMonitoringRegion:(CDVInvokedUrlCommand*)command;
-//- (void) getMonitoredRegionIds:(CDVInvokedUrlCommand*)command;
-//- (void) getPendingRegionUpdates:(CDVInvokedUrlCommand*)command;
+- (NSArray *) getMonitoredRegions;
 - (void) startMonitoringSignificantLocationChanges:(CDVInvokedUrlCommand*)command;
 - (void) stopMonitoringSignificantLocationChanges:(CDVInvokedUrlCommand*)command;
 

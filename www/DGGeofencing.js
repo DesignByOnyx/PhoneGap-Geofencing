@@ -7,8 +7,12 @@
  * dov.goldberg@ogonium.com
  *
  */
- 
-var exec = require('cordova/exec');
+
+var exec = require('cordova/exec'),
+	pendingRegionUpdates = [],
+	pendingLocationUpdates = [],
+	regionCallbacks = [],
+	locationCallbacks = [];
 
 
 var DGGeofencing = {
@@ -74,26 +78,74 @@ var DGGeofencing = {
 		return exec(success, fail, "DGGeofencing", "stopMonitoringSignificantLocationChanges", []);
 	},
 	
+	onRegionUpdate: function(callback) {
+		if( typeof callback === 'function' ) {
+			// TODO: check if callback function already exists
+			regionCallbacks.push(callback);
+		}
+		
+		if(pendingRegionUpdates.length) {
+			for(var i = 0; i < pendingRegionUpdates.length; i++) {
+				this.regionMonitorUpdate( pendingRegionUpdates[i] );
+			}
+		}
+	},
+	
+	onLocationUpdate: function(callback) {
+		if( typeof callback === 'function' ) {
+			// TODO: check if callback function already exists
+			locationCallbacks.push(callback);
+		}
+		
+		if(pendingLocationUpdates.length) {
+			for(var i = 0; i < pendingLocationUpdates.length; i++) {
+				this.regionMonitorUpdate( pendingLocationUpdates[i] );
+			}
+		}
+	},
+	
 	/* 
 	This is used so the JavaScript can be updated when a region is entered or exited
 	*/
-	regionMonitorUpdate: function(regionupdate) {
-		//steal.dev.log("regionMonitorUpdate: " + JSON.stringify(regionupdate));
-		var ev = document.createEvent('HTMLEvents');
-		ev.regionupdate = regionupdate;
-		ev.initEvent('region-update', true, true, arguments);
-		document.dispatchEvent(ev);
+	regionMonitorUpdate: function(regionUpdate) {
+		if( regionCallbacks.length ) {
+			//steal.dev.log("regionMonitorUpdate: " + JSON.stringify(regionupdate));
+			/*
+			var ev = document.createEvent('HTMLEvents');
+			ev.regionUpdate = regionUpdate;
+			ev.initEvent('region-update', true, true, arguments);
+			document.dispatchEvent(ev);
+			*/
+			for(var i = 0; i < regionCallbacks.length; i++) {
+				if( typeof regionCallbacks[i] === "function" ) {
+					regionCallbacks[i]( regionUpdate );
+				}
+			}
+		} else {
+			pendingRegionUpdates.push(regionUpdate);
+		}
 	},
 	
 	/* 
 	This is used so the JavaScript can be updated when a significant change has occured
 	*/
-	locationMonitorUpdate: function(locationupdate) {
-		//steal.dev.log("locationMonitorUpdate: " + JSON.stringify(locationupdate));
-		var ev = document.createEvent('HTMLEvents');
-		ev.locationupdate = locationupdate;
-		ev.initEvent('location-update', true, true, arguments);
-		document.dispatchEvent(ev);
+	locationMonitorUpdate: function(locationUpdate) {
+		if( locationCallbacks.length ) {
+			//steal.dev.log("locationMonitorUpdate: " + JSON.stringify(locationupdate));
+			/*
+			var ev = document.createEvent('HTMLEvents');
+			ev.locationUpdate = [locationUpdate];
+			ev.initEvent('location-update', true, true, arguments);
+			document.dispatchEvent(ev);
+			*/
+			for(var i = 0; i < locationCallbacks.length; i++) {
+				if( typeof locationCallbacks[i] === "function" ) {
+					locationCallbacks[i]( locationUpdate );
+				}
+			}
+		} else {
+			pendingLocationUpdates.push(locationUpdate);
+		}
 	}
 };
 

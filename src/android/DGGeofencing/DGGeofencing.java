@@ -67,7 +67,7 @@ public class DGGeofencing extends CordovaPlugin {
     //editor.putStringSet(PREFS_NAME, regionIds);
     
     // Support for <4.0
-    // TODO: rewrite this using best practices for converting HashSet<string> to String
+    // TODO: rewrite this using best practices for converting HashSet<string> to String (JSON?)
     strRegionIds = arrayJoin( regionIds.toArray( new String[regionIds.size()] ), ",");
     editor.putString(PREFS_NAME, strRegionIds);
     
@@ -206,14 +206,15 @@ public class DGGeofencing extends CordovaPlugin {
       public void run() {
         String status = intent.getBooleanExtra(LocationManager.KEY_PROXIMITY_ENTERING, false) ? "enter" : "left";
         String id = (String) intent.getExtras().get("id");
-	    Log.d(TAG, "javascript:DGGeofencing.regionMonitorUpdate(" + createRegionEvent(id, status) + ")");
-        webView.loadUrl("javascript:DGGeofencing.regionMonitorUpdate(" + createRegionEvent(id, status) + ")");
+        String timestamp = String.valueOf(System.currentTimeMillis() / 1000L);
+	    Log.d(TAG, "javascript:DGGeofencing.regionMonitorUpdate(" + createRegionEvent(id, status, timestamp) + ")");
+        webView.loadUrl("javascript:DGGeofencing.regionMonitorUpdate(" + createRegionEvent(id, status, timestamp) + ")");
       }
     });
   }
 
-  private String createRegionEvent(String id, String status) {
-    return "{fid:\"" + id + "\",status:\"" + status + "\"}";
+  private String createRegionEvent(String id, String status, String timestamp) {
+    return "{fid:\"" + id + "\",status:\"" + status + "\",timestamp:\"" + timestamp + "\"}";
   }
 /*
   private JSONObject parseParameters(JSONArray data) throws JSONException {

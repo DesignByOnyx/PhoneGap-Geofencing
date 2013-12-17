@@ -1,9 +1,11 @@
 
 #import "DGGeofencing.h"
 
+static DGGeofencing *sharedGeofencingHelper = nil;
+
 @implementation DGLocationData
 
-@synthesize locationStatus, geofencingStatus, locationInfo, locationCallbacks, geofencingCallbacks;
+@synthesize locationStatus, geofencingStatus, locationInfo, locationCallbacks, geofencingCallbacks, lsNewGeofences;
 - (DGLocationData*)init
 {
     self = (DGLocationData*)[super init];
@@ -11,6 +13,7 @@
         self.locationInfo = nil;
         self.locationCallbacks = nil;
         self.geofencingCallbacks = nil;
+        self.lsNewGeofences = nil;
     }
     return self;
 }
@@ -19,7 +22,7 @@
 
 @implementation DGGeofencing
 
-@synthesize locationData, locationManager;
+@synthesize locationData, locationManager, didLaunchForRegionUpdate;
 
 - (CDVPlugin*)initWithWebView:(UIWebView*)theWebView
 {
@@ -27,11 +30,35 @@
     if (self) {
         self.locationManager = [[CLLocationManager alloc] init];
         self.locationManager.delegate = self; // Tells the location manager to send updates to this object
-        __locationStarted = NO;
-        __highAccuracyEnabled = NO;
+        __hasGeofence = NO;
+        __isUpdatingLocation = NO;
+        __isMonitoringSignificantLocation = NO;
         self.locationData = nil;
     }
+    
+    UILocalNotification *notification = [[UILocalNotification alloc] init];
+    notification.fireDate = [NSDate date];
+    notification.timeZone = [NSTimeZone defaultTimeZone];
+    notification.alertBody = @"Geofence Init";
+    notification.alertAction = @"OK";
+    notification.soundName = @"yes.caf";
+    notification.userInfo = [[NSDictionary alloc] init];
+    [[UIApplication sharedApplication] scheduleLocalNotification:notification];
+    
     return self;
+}
+
++(DGGeofencing *)sharedGeofencingHelper
+{
+    //objects using shard instance are responsible for retain/release count
+    //retain count must remain 1 to stay in mem
+    
+    if (!sharedGeofencingHelper)
+    {
+        sharedGeofencingHelper = [[DGGeofencing alloc] init];
+    }
+    
+    return sharedGeofencingHelper;
 }
 
 #pragma mark Location and Geofencing Permissions
@@ -109,7 +136,8 @@
 
 #pragma mark Plugin Functions
 
-
+// This method saves a reference to the command.callbackId for every registered region.
+// This is only used to resolve calls to "startMonitoringRegion" (didStart or didFail handlers resolve the command)
 - (void) initCallbackForRegionMonitoring:(CDVInvokedUrlCommand *)command forRegion:(CLRegion *)region {
     if (!self.locationData) {
         self.locationData = [[DGLocationData alloc] init];
@@ -120,16 +148,21 @@
         lData.geofencingCallbacks = [[NSMutableDictionary alloc] init];
     }
     
-    // Save a reference for the regionId/commandId
-    //NSDictionary *dict = @{@"fid": region.identifier, @"commandId": command.callbackId};
-    //[lData.geofencingCallbacks addObject:dict];
+    if([lData.geofencingCallbacks objectForKey:region.identifier]) {
+        [[self locationManager] stopMonitoringForRegion:region];
+    }
+    
     [lData.geofencingCallbacks setObject:command.callbackId forKey:region.identifier];
 }
 - (void) clearCallbackForRegionMonitoring:(NSString *)regionId {
     // Remove callback for region
     DGLocationData* lData = self.locationData;
-    if([lData.geofencingCallbacks count] > 0 && [lData.geofencingCallbacks objectForKey:regionId]) {
+    if(__hasGeofence && [lData.geofencingCallbacks objectForKey:regionId]) {
         [lData.geofencingCallbacks removeObjectForKey:regionId];
+    }
+    
+    if([lData.geofencingCallbacks count] == 0) {
+        lData.geofencingCallbacks = nil; // Does this free up memory?
     }
 }
 - (void) startMonitoringRegion:(CDVInvokedUrlCommand*)command {
@@ -175,20 +208,15 @@
         [result setKeepCallbackAsBool:YES];
         [self.commandDelegate sendPluginResult:result callbackId:callbackId];
     } else {
-        // Start region monitoring
+        // Set up the region object
         CLLocationCoordinate2D coord = CLLocationCoordinate2DMake([latitude doubleValue], [longitude doubleValue]);
         CLRegion *region = [[CLRegion alloc] initCircularRegionWithCenter:coord radius:radius identifier:regionId];
         
-        // Go ahead and register the callback commandId
+        // DO THIS BEFORE START MONITORING - Go ahead and register the callback commandId
         [self initCallbackForRegionMonitoring:command forRegion:region];
         
-        [self.locationManager startMonitoringForRegion:region];
-        
-        /*
-        CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-	    [result setKeepCallbackAsBool:YES];
-	    [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-         */
+        // now start monitoring
+        [self.locationManager startMonitoringForRegion:region desiredAccuracy:kCLLocationAccuracyHundredMeters];
     }
 }
 
@@ -204,6 +232,10 @@
     CLRegion *region = [[CLRegion alloc] initCircularRegionWithCenter:coord radius:10.0 identifier:regionId];
     [[self locationManager] stopMonitoringForRegion:region];
     
+    if([[self getMonitoredRegions] count] == 0) {
+        __hasGeofence = NO;
+    }
+    
     // return success to callback
     NSMutableDictionary* returnInfo = [NSMutableDictionary dictionaryWithCapacity:2];
     NSNumber* timestamp = [NSNumber numberWithDouble:([[NSDate date] timeIntervalSince1970] * 1000)];
@@ -215,6 +247,11 @@
     CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
     [result setKeepCallbackAsBool:YES];
     [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+}
+
+- (NSArray *) getMonitoredRegions {
+    NSArray *regions = [[self.locationManager monitoredRegions] allObjects];
+    return regions;
 }
 
 
@@ -273,6 +310,8 @@
         [self.commandDelegate sendPluginResult:result callbackId:callbackId];
         return;
     }
+    
+    __isMonitoringSignificantLocation = YES;
     
     [[self locationManager] startMonitoringSignificantLocationChanges];
     CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
@@ -336,6 +375,8 @@
         return;
     }
     
+    __isMonitoringSignificantLocation = NO;
+    
     [[self locationManager] stopMonitoringSignificantLocationChanges];
     CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     [result setKeepCallbackAsBool:YES];
@@ -365,16 +406,25 @@
     [returnInfo setObject:regionId forKey:@"regionId"];
     [returnInfo setObject:@"monitorstart" forKey:@"callbacktype"];
     
-    // Go ahead and fire the didEnterRegion event
-    // TODO: get current location and make sure we are in the region
-    [self locationManager:manager didEnterRegion:region];
-    
-    CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
-    [result setKeepCallbackAsBool:YES];
-    [self.commandDelegate sendPluginResult:result callbackId:callbackId];
+    // Save a reference to the new geofence and go ahead and check the current location.
+    // If we are in a region, fire the "enter" event (see didUpdateToLocation)
+    if(!lData.lsNewGeofences) {
+        lData.lsNewGeofences = [[NSMutableDictionary alloc] init];
+    }
+    [lData.lsNewGeofences setObject:region forKey:regionId];
+    if(!__isUpdatingLocation) {
+        __isUpdatingLocation = YES;
+        [self.locationManager startUpdatingLocation];
+    }
     
     // Clear the callback... we no longer need it
     [self clearCallbackForRegionMonitoring:regionId];
+    __hasGeofence = YES;
+    
+    // Resolve the startMonitoringRegion deferred with success
+    CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
+    [result setKeepCallbackAsBool:YES];
+    [self.commandDelegate sendPluginResult:result callbackId:callbackId];
 }
 
 
@@ -397,12 +447,13 @@
     [returnInfo setObject:regionId forKey:@"regionId"];
     [returnInfo setObject:@"monitorfail" forKey:@"callbacktype"];
     
+    // Clear the callback... we no longer need it
+    [self clearCallbackForRegionMonitoring:regionId];
+    
+    // Reject the startMonitoringRegion deferred with failure
     CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:returnInfo];
     [result setKeepCallbackAsBool:YES];
     [self.commandDelegate sendPluginResult:result callbackId:callbackId];
-    
-    // Clear the callback... we no longer need it
-    [self clearCallbackForRegionMonitoring:regionId];
 }
 
 /*
@@ -432,10 +483,22 @@
  *    CLLocationManager instance with a non-nil delegate that implements this method.
  */
 - (void)locationManager:(CLLocationManager *)manager didExitRegion:(CLRegion *)region {
+    NSLog(@"Did Exit Region");
     NSDictionary *dict = @{
                            @"status": @"left",
-                           @"fid": region.identifier
-                           };
+                           @"regionId": region.identifier,
+                           @"timestamp": [NSString stringWithFormat:@"%f", [[NSDate date] timeIntervalSince1970]]
+                        };
+    
+    UILocalNotification *notification = [[UILocalNotification alloc] init];
+    notification.fireDate = [NSDate date];
+    notification.timeZone = [NSTimeZone defaultTimeZone];
+    notification.alertBody = @"EXIT JOB SITE";
+    notification.alertAction = @"OK";
+    notification.soundName = @"yes.caf";
+    notification.userInfo = [[NSDictionary alloc] init];
+    [[UIApplication sharedApplication] scheduleLocalNotification:notification];
+
     
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options: 0 error: nil];
     NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
@@ -443,31 +506,107 @@
     [self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
 }
 
+/*
 -(void) locationManager:(CLLocationManager *)manager didUpdateToLocation:(CLLocation *)newLocation fromLocation:(CLLocation *)oldLocation {
-    NSDictionary *dict = @{
-                           @"new_timestamp": [NSNumber numberWithDouble:[newLocation.timestamp timeIntervalSince1970]],
-                           @"new_speed": [NSNumber numberWithDouble:newLocation.speed],
-                           @"new_course": [NSNumber numberWithDouble:newLocation.course],
-                           @"new_verticalAccuracy": [NSNumber numberWithDouble:newLocation.verticalAccuracy],
-                           @"new_horizontalAccuracy": [NSNumber numberWithDouble:newLocation.horizontalAccuracy],
-                           @"new_altitude": [NSNumber numberWithDouble:newLocation.altitude],
-                           @"new_latitude": [NSNumber numberWithDouble:newLocation.coordinate.latitude],
-                           @"new_longitude": [NSNumber numberWithDouble:newLocation.coordinate.longitude],
-                           
-                           @"old_timestamp": [NSNumber numberWithDouble:[newLocation.timestamp timeIntervalSince1970]],
-                           @"old_speed": [NSNumber numberWithDouble:newLocation.speed],
-                           @"old_course": [NSNumber numberWithDouble:newLocation.course],
-                           @"old_verticalAccuracy": [NSNumber numberWithDouble:newLocation.verticalAccuracy],
-                           @"old_horizontalAccuracy": [NSNumber numberWithDouble:newLocation.horizontalAccuracy],
-                           @"old_altitude": [NSNumber numberWithDouble:newLocation.altitude],
-                           @"old_latitude": [NSNumber numberWithDouble:newLocation.coordinate.latitude],
-                           @"old_longitude": [NSNumber numberWithDouble:newLocation.coordinate.longitude]
-                           };
     
-    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options:0 error: nil];
-    NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-    NSString *jsStatement = [NSString stringWithFormat:@"DGGeofencing.locationMonitorUpdate(%@);", jsonString];
-    [self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
+    NSNumber *new_lat = [NSNumber numberWithDouble:newLocation.coordinate.latitude];
+    NSNumber *new_lon = [NSNumber numberWithDouble:newLocation.coordinate.longitude];
+    
+    // For any new geofencing regions, check if we are currently inside and fire the didEnterRegion event
+    DGLocationData* lData = self.locationData;
+    if(lData.lsNewGeofences) {
+        for(id key in lData.lsNewGeofences) {
+            CLRegion *region = [lData.lsNewGeofences objectForKey:key];
+            if([region containsCoordinate:newLocation.coordinate]) {
+                [self locationManager:manager didEnterRegion:region];
+            }
+        }
+        
+        [lData.lsNewGeofences removeAllObjects];
+        lData.lsNewGeofences = nil;
+        
+        if(__isUpdatingLocation) {
+            __isUpdatingLocation = NO;
+            [self.locationManager stopUpdatingLocation];
+        }
+    }
+    
+    if(__isMonitoringSignificantLocation) {
+        NSDictionary *dict = @{
+                               @"new_timestamp": [NSNumber numberWithDouble:[newLocation.timestamp timeIntervalSince1970]],
+                               @"new_speed": [NSNumber numberWithDouble:newLocation.speed],
+                               @"new_course": [NSNumber numberWithDouble:newLocation.course],
+                               @"new_verticalAccuracy": [NSNumber numberWithDouble:newLocation.verticalAccuracy],
+                               @"new_horizontalAccuracy": [NSNumber numberWithDouble:newLocation.horizontalAccuracy],
+                               @"new_altitude": [NSNumber numberWithDouble:newLocation.altitude],
+                               @"new_latitude": new_lat,
+                               @"new_longitude": new_lon,
+                               
+                               @"old_timestamp": [NSNumber numberWithDouble:[oldLocation.timestamp timeIntervalSince1970]],
+                               @"old_speed": [NSNumber numberWithDouble:oldLocation.speed],
+                               @"old_course": [NSNumber numberWithDouble:oldLocation.course],
+                               @"old_verticalAccuracy": [NSNumber numberWithDouble:oldLocation.verticalAccuracy],
+                               @"old_horizontalAccuracy": [NSNumber numberWithDouble:oldLocation.horizontalAccuracy],
+                               @"old_altitude": [NSNumber numberWithDouble:oldLocation.altitude],
+                               @"old_latitude": [NSNumber numberWithDouble:oldLocation.coordinate.latitude],
+                               @"old_longitude": [NSNumber numberWithDouble:oldLocation.coordinate.longitude]
+                               };
+        
+        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options:0 error: nil];
+        NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+        NSString *jsStatement = [NSString stringWithFormat:@"DGGeofencing.locationMonitorUpdate(%@);", jsonString];
+        [self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
+    }
+}
+ */
+
+- (void)locationManager:(CLLocationManager *)manager didUpdateLocations:(NSArray *)locations {
+    DGLocationData* lData = self.locationData;
+    
+    // Loop over the locations and perform necessary tasks
+    for(CLLocation *newLocation in locations) {
+        NSNumber *new_lat = [NSNumber numberWithDouble:newLocation.coordinate.latitude];
+        NSNumber *new_lon = [NSNumber numberWithDouble:newLocation.coordinate.longitude];
+        
+        // For any new geofencing regions, check if we are currently inside and fire the didEnterRegion event
+        if(lData.lsNewGeofences) {
+            for(id key in lData.lsNewGeofences) {
+                CLRegion *region = [lData.lsNewGeofences objectForKey:key];
+                if([region containsCoordinate:newLocation.coordinate]) {
+                    [self locationManager:manager didEnterRegion:region];
+                }
+            }
+        }
+        
+        if(__isMonitoringSignificantLocation) {
+            NSDictionary *dict = @{
+                                   @"new_timestamp": [NSNumber numberWithDouble:[newLocation.timestamp timeIntervalSince1970]],
+                                   @"new_speed": [NSNumber numberWithDouble:newLocation.speed],
+                                   @"new_course": [NSNumber numberWithDouble:newLocation.course],
+                                   @"new_verticalAccuracy": [NSNumber numberWithDouble:newLocation.verticalAccuracy],
+                                   @"new_horizontalAccuracy": [NSNumber numberWithDouble:newLocation.horizontalAccuracy],
+                                   @"new_altitude": [NSNumber numberWithDouble:newLocation.altitude],
+                                   @"new_latitude": new_lat,
+                                   @"new_longitude": new_lon
+                                };
+            
+            NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options:0 error: nil];
+            NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+            NSString *jsStatement = [NSString stringWithFormat:@"DGGeofencing.locationMonitorUpdate(%@);", jsonString];
+            [self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
+        }
+    }
+    
+    // clean up
+    if(lData.lsNewGeofences) {
+        [lData.lsNewGeofences removeAllObjects];
+        lData.lsNewGeofences = nil;
+        
+        if(__isUpdatingLocation) {
+            __isUpdatingLocation = NO;
+            [self.locationManager stopUpdatingLocation];
+        }
+    }
 }
 
 @end
