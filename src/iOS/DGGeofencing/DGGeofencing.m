@@ -36,15 +36,6 @@ static DGGeofencing *sharedGeofencingHelper = nil;
         self.locationData = nil;
     }
     
-    UILocalNotification *notification = [[UILocalNotification alloc] init];
-    notification.fireDate = [NSDate date];
-    notification.timeZone = [NSTimeZone defaultTimeZone];
-    notification.alertBody = @"Geofence Init";
-    notification.alertAction = @"OK";
-    notification.soundName = @"yes.caf";
-    notification.userInfo = [[NSDictionary alloc] init];
-    [[UIApplication sharedApplication] scheduleLocalNotification:notification];
-    
     return self;
 }
 
@@ -216,7 +207,7 @@ static DGGeofencing *sharedGeofencingHelper = nil;
         [self initCallbackForRegionMonitoring:command forRegion:region];
         
         // now start monitoring
-        [self.locationManager startMonitoringForRegion:region desiredAccuracy:kCLLocationAccuracyHundredMeters];
+        [self.locationManager  startMonitoringForRegion:region desiredAccuracy:kCLLocationAccuracyHundredMeters];
     }
 }
 
@@ -489,16 +480,6 @@ static DGGeofencing *sharedGeofencingHelper = nil;
                            @"regionId": region.identifier,
                            @"timestamp": [NSString stringWithFormat:@"%f", [[NSDate date] timeIntervalSince1970]]
                         };
-    
-    UILocalNotification *notification = [[UILocalNotification alloc] init];
-    notification.fireDate = [NSDate date];
-    notification.timeZone = [NSTimeZone defaultTimeZone];
-    notification.alertBody = @"EXIT JOB SITE";
-    notification.alertAction = @"OK";
-    notification.soundName = @"yes.caf";
-    notification.userInfo = [[NSDictionary alloc] init];
-    [[UIApplication sharedApplication] scheduleLocalNotification:notification];
-
     
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options: 0 error: nil];
     NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];

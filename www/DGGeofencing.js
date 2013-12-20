@@ -59,7 +59,8 @@ var DGGeofencing = {
 	NONE
 	*/
 	getPendingRegionUpdates: function(success, fail) {
-		return exec(success, fail, "DGGeofencing", "getPendingRegionUpdates", []);
+		//return exec(success, fail, "DGGeofencing", "getPendingRegionUpdates", []);
+		return pendingRegionUpdates;
 	},
 
 /*
@@ -109,7 +110,6 @@ var DGGeofencing = {
 	*/
 	regionMonitorUpdate: function(regionUpdate) {
 		if( regionCallbacks.length ) {
-			//steal.dev.log("regionMonitorUpdate: " + JSON.stringify(regionupdate));
 			/*
 			var ev = document.createEvent('HTMLEvents');
 			ev.regionUpdate = regionUpdate;
