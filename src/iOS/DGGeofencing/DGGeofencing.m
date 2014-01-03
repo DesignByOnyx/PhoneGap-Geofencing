@@ -474,11 +474,13 @@ static DGGeofencing *sharedGeofencingHelper = nil;
  *    CLLocationManager instance with a non-nil delegate that implements this method.
  */
 - (void)locationManager:(CLLocationManager *)manager didExitRegion:(CLRegion *)region {
-    NSLog(@"Did Exit Region");
+    NSLog(@"Did Exit Job Site");
+    NSNumber* timestamp = [NSNumber numberWithLongLong:(long long)[[NSDate date] timeIntervalSince1970] * 1000];
+    
     NSDictionary *dict = @{
                            @"status": @"left",
                            @"regionId": region.identifier,
-                           @"timestamp": [NSString stringWithFormat:@"%f", [[NSDate date] timeIntervalSince1970]]
+                           @"timestamp": timestamp
                         };
     
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options: 0 error: nil];
